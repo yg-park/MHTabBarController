@@ -31,6 +31,12 @@ static const NSInteger TagOffset = 1000;
 	UIImageView *indicatorImageView;
 }
 
+- (CGFloat)tabBarHeight
+{
+	return 44.0f;
+}
+
+
 - (void)viewDidLoad
 {
 	[super viewDidLoad];
@@ -41,7 +47,7 @@ static const NSInteger TagOffset = 1000;
 	tabButtonsContainerView = [[UIView alloc] initWithFrame:rect];
 	tabButtonsContainerView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	[self.view addSubview:tabButtonsContainerView];
-
+    
 	rect.origin.y = self.tabBarHeight;
 	rect.size.height = self.view.bounds.size.height - self.tabBarHeight;
 	contentContainerView = [[UIView alloc] initWithFrame:rect];
@@ -325,7 +331,7 @@ static const NSInteger TagOffset = 1000;
 
 - (void)tabButtonPressed:(UIButton *)sender
 {
-	[self setSelectedIndex:sender.tag - TagOffset animated:YES];
+	[self setSelectedIndex:(sender.tag - TagOffset) animated:NO];
 }
 
 #pragma mark - Change these methods to customize the look of the buttons
@@ -354,9 +360,21 @@ static const NSInteger TagOffset = 1000;
 	[button setTitleShadowColor:[UIColor whiteColor] forState:UIControlStateNormal];
 }
 
-- (CGFloat)tabBarHeight
+#pragma mark - Hide Tabbar Method
+- (void)setTabbarHidden:(BOOL)hidden
 {
-	return 44.0f;
+    hidden == YES ? [self hideTabbar]:[self showTabbar];
 }
+
+- (void)hideTabbar
+{
+    [tabButtonsContainerView setHidden:YES];
+}
+
+- (void)showTabbar
+{
+    [tabButtonsContainerView setHidden:NO];
+}
+
 
 @end
