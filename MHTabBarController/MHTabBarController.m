@@ -347,11 +347,17 @@ static const NSInteger TagOffset = 1000;
 - (void)hideTabbar
 {
     [tabButtonsContainerView setHidden:YES];
+    CGRect rect = self.view.bounds;
+    contentContainerView.frame = rect;
 }
 
 - (void)showTabbar
 {
     [tabButtonsContainerView setHidden:NO];
+    CGRect rect = CGRectMake(0.0f, 0.0f, self.view.bounds.size.width, self.tabBarHeight);
+    rect.origin.y = self.tabBarHeight;
+	rect.size.height = self.view.bounds.size.height - self.tabBarHeight;
+	contentContainerView.frame = rect;
 }
 
 
