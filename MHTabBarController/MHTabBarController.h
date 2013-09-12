@@ -20,8 +20,14 @@
  * THE SOFTWARE.
  */
 
-@protocol MHTabBarControllerDelegate;
 
+#define MHTabBarHeight 61.0f
+
+static NSString *const MHNotificationTabHide = @"MHTabBarHide";
+static NSString *const MHNotificationRotateOrientation = @"MHRotateOrientation";
+
+
+@protocol MHTabBarControllerDelegate;
 /*
  * A custom tab bar container view controller. It works just like a regular
  * UITabBarController, except the tabs are at the top and look different.
@@ -29,9 +35,11 @@
 @interface MHTabBarController : UIViewController
 
 @property (nonatomic, copy) NSArray *viewControllers;
+@property (nonatomic, copy) NSArray *viewTabButtons;
 @property (nonatomic, weak) UIViewController *selectedViewController;
 @property (nonatomic, assign) NSUInteger selectedIndex;
 @property (nonatomic, weak) id <MHTabBarControllerDelegate> delegate;
+@property UIInterfaceOrientationMask orientationMask;
 
 - (void)setTabbarHidden:(BOOL)hidden;
 - (void)setSelectedIndex:(NSUInteger)index animated:(BOOL)animated;
