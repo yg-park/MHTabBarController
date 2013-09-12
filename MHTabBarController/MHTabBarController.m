@@ -21,6 +21,8 @@
  */
 
 #import "MHTabBarController.h"
+#import "RATabButtonView.h"
+
 
 static const NSInteger TagOffset = 1000;
 
@@ -32,7 +34,7 @@ static const NSInteger TagOffset = 1000;
 
 - (CGFloat)tabBarHeight
 {
-	return 44.0f;
+	return MHTabBarHeight;
 }
 
 
@@ -54,6 +56,18 @@ static const NSInteger TagOffset = 1000;
 	[self.view addSubview:contentContainerView];
 
 	[self reloadTabButtons];
+    
+    // setup notification
+    // 1. hide, show tabs
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(hideTabBar:)
+                                                 name:MHNotificationTabHide
+                                               object:nil];
+    // 2. interfaceOrientation
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(supportRotationOrientation:)
+                                                 name:MHNotificationRotateOrientation
+                                               object:nil];
 }
 
 - (void)viewWillLayoutSubviews
@@ -98,27 +112,20 @@ static const NSInteger TagOffset = 1000;
 
 - (void)addTabButtons
 {
+    NSAssert([_viewTabButtons count] == [_viewControllers count],
+             @"MHTabBarController requires controllers count equle tabbuttons count");
+    
 	NSUInteger index = 0;
-	for (UIViewController *viewController in self.viewControllers)
-	{
-		UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-		button.tag = TagOffset + index;
-		button.titleLabel.font = [UIFont boldSystemFontOfSize:18];
-		button.titleLabel.shadowOffset = CGSizeMake(0.0f, 1.0f);
-
-		UIOffset offset = viewController.tabBarItem.titlePositionAdjustment;
-		button.titleEdgeInsets = UIEdgeInsetsMake(offset.vertical, offset.horizontal, 0.0f, 0.0f);
-		button.imageEdgeInsets = viewController.tabBarItem.imageInsets;
-		[button setTitle:viewController.tabBarItem.title forState:UIControlStateNormal];
-		[button setImage:viewController.tabBarItem.image forState:UIControlStateNormal];
-
-		[button addTarget:self action:@selector(tabButtonPressed:) forControlEvents:UIControlEventTouchDown];
-
-		[self deselectTabButton:button];
-		[tabButtonsContainerView addSubview:button];
-
+    for (RATabButtonView *tabButton in _viewTabButtons)
+    {
+        tabButton.tag = TagOffset + index;
+        [tabButton addTarget:self action:@selector(tabButtonPressed:) forControlEvents:UIControlEventTouchDown];
+        [self deselectTabButton:tabButton];
+        
+        [tabButtonsContainerView addSubview:tabButton];
+        
 		++index;
-	}
+    }
 }
 
 - (void)removeTabButtons
@@ -137,7 +144,7 @@ static const NSInteger TagOffset = 1000;
 	CGRect rect = CGRectMake(0.0f, 0.0f, floorf(self.view.bounds.size.width / count), self.tabBarHeight);
 
 	NSArray *buttons = [tabButtonsContainerView subviews];
-	for (UIButton *button in buttons)
+	for (RATabButtonView *button in buttons)
 	{
 		if (index == count - 1)
 			rect.size.width = self.view.bounds.size.width - rect.origin.x;
@@ -212,7 +219,7 @@ static const NSInteger TagOffset = 1000;
 
 		if (_selectedIndex != NSNotFound)
 		{
-			UIButton *fromButton = (UIButton *)[tabButtonsContainerView viewWithTag:TagOffset + _selectedIndex];
+			RATabButtonView *fromButton = (RATabButtonView *)[tabButtonsContainerView viewWithTag:TagOffset + _selectedIndex];
 			[self deselectTabButton:fromButton];
 			fromViewController = self.selectedViewController;
 		}
@@ -220,10 +227,10 @@ static const NSInteger TagOffset = 1000;
 		NSUInteger oldSelectedIndex = _selectedIndex;
 		_selectedIndex = newSelectedIndex;
 
-		UIButton *toButton;
+		RATabButtonView *toButton;
 		if (_selectedIndex != NSNotFound)
 		{
-			toButton = (UIButton *)[tabButtonsContainerView viewWithTag:TagOffset + _selectedIndex];
+			toButton = (RATabButtonView *)[tabButtonsContainerView viewWithTag:TagOffset + _selectedIndex];
 			[self selectTabButton:toButton];
 			toViewController = self.selectedViewController;
 		}
@@ -307,35 +314,21 @@ static const NSInteger TagOffset = 1000;
 		[self setSelectedIndex:index animated:animated];
 }
 
-- (void)tabButtonPressed:(UIButton *)sender
+- (void)tabButtonPressed:(RATabButtonView *)sender
 {
 	[self setSelectedIndex:(sender.tag - TagOffset) animated:NO];
 }
 
 #pragma mark - Change these methods to customize the look of the buttons
 
-- (void)selectTabButton:(UIButton *)button
+- (void)selectTabButton:(RATabButtonView *)button
 {
-	[button setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
-
-	UIImage *image = [[UIImage imageNamed:@"MHTabBarActiveTab"] stretchableImageWithLeftCapWidth:0 topCapHeight:0];
-	[button setBackgroundImage:image forState:UIControlStateNormal];
-	[button setBackgroundImage:image forState:UIControlStateHighlighted];
-	
-	[button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-	[button setTitleShadowColor:[UIColor colorWithWhite:0.0f alpha:0.5f] forState:UIControlStateNormal];
+	[button setCurrentButtonState:UIControlStateSelected];
 }
 
-- (void)deselectTabButton:(UIButton *)button
+- (void)deselectTabButton:(RATabButtonView *)button
 {
-	[button setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-
-	UIImage *image = [[UIImage imageNamed:@"MHTabBarInactiveTab"] stretchableImageWithLeftCapWidth:1 topCapHeight:0];
-	[button setBackgroundImage:image forState:UIControlStateNormal];
-	[button setBackgroundImage:image forState:UIControlStateHighlighted];
-
-	[button setTitleColor:[UIColor colorWithRed:175/255.0f green:85/255.0f blue:58/255.0f alpha:1.0f] forState:UIControlStateNormal];
-	[button setTitleShadowColor:[UIColor whiteColor] forState:UIControlStateNormal];
+	[button setCurrentButtonState:UIControlStateNormal];
 }
 
 #pragma mark - Hide Tabbar Method
@@ -358,6 +351,35 @@ static const NSInteger TagOffset = 1000;
     rect.origin.y = self.tabBarHeight;
 	rect.size.height = self.view.bounds.size.height - self.tabBarHeight;
 	contentContainerView.frame = rect;
+    [contentContainerView updateConstraints];
+}
+
+#pragma mark - NSNotification Observer
+#pragma mark -
+- (void)hideTabBar:(NSNotification *)notification
+{
+    NSString *hiddenString = notification.object;
+    BOOL hidden = [hiddenString isEqualToString:@"YES"] ? YES:NO;
+    
+    [self setTabbarHidden:hidden];
+}
+
+- (void)supportRotationOrientation:(NSNotification *)notification
+{
+    NSNumber *value = notification.object;
+    _orientationMask = [value integerValue];
+}
+
+#pragma mark - Orientations
+#pragma mark -
+- (BOOL)shouldAutorotate
+{
+    return YES;
+}
+
+- (NSUInteger)supportedInterfaceOrientations
+{
+    return _orientationMask;
 }
 
 
