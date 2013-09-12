@@ -30,6 +30,11 @@
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
+    [self supportRotateOrientation:UIInterfaceOrientationMaskPortrait];
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
 }
 
 - (void)didReceiveMemoryWarning

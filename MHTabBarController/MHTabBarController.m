@@ -22,6 +22,7 @@
 
 #import "MHTabBarController.h"
 #import "RATabButtonView.h"
+#import <objc/message.h>
 
 
 static const NSInteger TagOffset = 1000;
@@ -68,6 +69,7 @@ static const NSInteger TagOffset = 1000;
                                              selector:@selector(supportRotationOrientation:)
                                                  name:MHNotificationRotateOrientation
                                                object:nil];
+    
 }
 
 - (void)viewWillLayoutSubviews
@@ -368,6 +370,17 @@ static const NSInteger TagOffset = 1000;
 {
     NSNumber *value = notification.object;
     _orientationMask = [value integerValue];
+    
+    if (_orientationMask == UIInterfaceOrientationMaskPortrait)
+    {
+        if(UIDeviceOrientationIsLandscape(self.interfaceOrientation))
+        {
+            if ([[UIDevice currentDevice] respondsToSelector:@selector(setOrientation:)])
+            {
+                objc_msgSend([UIDevice currentDevice], @selector(setOrientation:), UIInterfaceOrientationPortrait );
+            }
+        }
+    }
 }
 
 #pragma mark - Orientations
